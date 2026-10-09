@@ -34,11 +34,11 @@ X's For You feed scores each post as a weighted sum of predicted actions: `Final
 | Repost | 1.0 | 2 |
 | Like | 0.5 | 1 |
 
-Small weights (post click 0.4, open link 0.2, video open 0.07, photo expand 0.05, dwell 0.05) are ignored when writing. Bookmark has no weight in `param.rs`, so it is not counted.
+Small weights (click dwell time 0.4, post click 0.3, open link 0.2, video open 0.07, photo expand 0.05, dwell 0.05) are not written for directly, but a post people open and actually read earns click + click dwell (0.7 combined, more than a like). Profile clicks and video watch time are 0. Bookmark has no weight in `param.rs`, so it is not counted.
 
 ### Mutual follow boost
 
-When viewer and author follow each other, a reply gets an extra +15, so it is worth 20, the same as a copy link.
+When viewer and author follow each other, the predicted chance the viewer replies to the author's original post gets an extra +15, so it is worth 20, the same as a copy link. This applies to original posts, not to your own replies.
 
 ### Negative weights
 
@@ -46,17 +46,18 @@ When viewer and author follow each other, a reply gets an extra +15, so it is wo
 |---|---|
 | Report | -234.0 |
 | Mute author | -58.8 |
-| Not interested | -43.2 |
+| Not interested | -47.52 |
 | Block author | -31.2 |
 
 These scale predicted probabilities, not raw counts, so one report does not cancel hundreds of likes. But outrage bait, spam, and fight-picking are expensive if the model predicts even a small chance of them.
 
 ### Adjustments after scoring
 
-- **Author diversity:** each extra post from the same author in a batch is discounted (0.5 decay, 0.25 floor). Do not post twice in a row.
-- **Out-of-network:** posts from accounts the viewer does not follow are multiplied by 0.75 (0.5 for topic-based).
-- **Low-impression boost:** small accounts get a boost toward a target position.
-- **48 hour cutoff:** posts older than 48 hours are filtered before scoring.
+- **Author diversity:** each extra post from the same author in one batch is multiplied by 0.5 (floor 0.25), then a diversity rerank pushes similar posts apart.
+- **Out-of-network:** posts shown to non-followers are multiplied by 0.75 (0.5 for topic-based).
+- **Your replies and reposts:** shown to followers at x0.75 and filtered out for non-followers. Original posts are the reach strategy.
+- **Cold-start boost:** under 200 impressions, under 50k followers, post under 2 hours old: lifted toward feed slot ~15.
+- **48 hour cutoff:** posts older than 48 hours are dropped before scoring.
 
 Full detail is in [`x-review/references/weights.md`](x-review/references/weights.md).
 
@@ -70,13 +71,13 @@ The score is the sum of five parts, rounded to the nearest half point. It is str
 | Standalone value | 0 to 3 | Could someone paste this link to one person with no context? Drives copy link and DM share. |
 | Reply or quote trigger | 0 to 2 | Is there an easy, natural reason to answer or add a take? |
 | Follow signal | 0 to 1 | Does it show a clear, repeatable theme that makes people want more? |
-| Clean delivery | 0 to 2 | Deductions for a link in the body, hashtags, engagement bait, walls of text, multiple ideas, outrage bait. |
+| Clean delivery | 0 to 2 | Deductions for a teaser that needs its link, hashtags, engagement bait, walls of text, multiple ideas, outrage bait, near-duplicates of a recent post. |
 
 ### Caps
 
 - Standalone value of 1 or less: the post cannot score above **7**.
 - Reply or quote trigger of 0: the post cannot score above **8**.
-- Link in the body with standalone value under 3: the post cannot score above **6**.
+- Post only makes sense after clicking a link: the post cannot score above **6**.
 
 ### Calibration
 
@@ -136,7 +137,7 @@ Or skip the command and just say "score this tweet", "will this post get reach",
 - If you run `/x-review` with no post, it asks for one.
 - Ask for **the full breakdown** to see per-action reasons and the rubric parts.
 - **Threads:** scores the first post, then comments on whether the thread helps replies.
-- **Replies and quote posts:** scored, with a note that replies get less reach.
+- **Replies and reposts:** scored, with a note that they are shown to followers at x0.75 and filtered out for non-followers, so they do not grow reach. Strong ideas get turned into quote or original posts.
 - **Image or video posts:** judged on the text plus the visual described.
 - **Multiple drafts:** one-line score each, then a rewrite of the strongest.
 - **Already 9 or higher:** it says so and stops.
@@ -160,5 +161,5 @@ x-review/
 ## Caveats
 
 - Weights come from the public repo and can change.
-- The claim that non-Premium accounts lose reach for links in the main post is reported, not confirmed in the open-source params. The skill flags body links and suggests a self-reply anyway.
+- The ranker has no link penalty and no Premium boost in the 2026 code. The skill flags a body link only when the post depends on it, and suggests a self-reply for pure pointers.
 - Predicted engagement is not guaranteed engagement.

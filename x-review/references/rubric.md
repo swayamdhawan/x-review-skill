@@ -25,10 +25,10 @@ Score out of 10. Sum the points. Be strict. Round to the nearest half point.
 - 1: Fits a clear niche or POV that suggests more of the same.
 
 **5. Clean delivery (0 to 2).** Formatting and risk.
-- Deduct for (negatives are expensive: report -234, mute -58.8, not interested -43.2): link in the post body, hashtags, engagement bait ("like and RT", "comment YES"), walls of text, more than one idea, outrage bait that invites reports.
+- Deduct for (negatives are expensive: report -234, mute -58.8, not interested -47.52, block -31.2): a teaser that needs the link to make sense, hashtags, engagement bait ("like and RT", "comment YES"), walls of text with no reason to keep reading, more than one idea, outrage bait that invites reports, a near-duplicate of a recent post.
 - 0: Two or more of those problems.
 - 1: One problem.
-- 2: Clean. Short lines, one idea, no link in body, no bait.
+- 2: Clean. Short lines, one idea, stands alone without a link, no bait.
 
 ## Calibration
 
@@ -42,4 +42,4 @@ Score out of 10. Sum the points. Be strict. Round to the nearest half point.
 
 - A post cannot score above 7 if Standalone value is 1 or less.
 - A post cannot score above 8 if Reply or quote trigger is 0.
-- A post cannot score above 6 if it has a link in the body and Standalone value is under 3.
+- A post cannot score above 6 if it only makes sense after clicking a link.
